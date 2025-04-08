@@ -9,26 +9,48 @@ import {
   CartesianGrid,
 } from 'recharts'
 
+// 📌 Tipos
+type AssetData = {
+  totalNetInflow: number;
+  bigVolumeNetInflow: number;
+  buyMakerBigVolume: number;
+  buyTakerBigVolume: number;
+  mediumVolumeNetInflow: number;
+  smallVolumeNetInflow: number;
+  updateTimestamp: number;
+};
+
+type HistoryItem = {
+  time: string;
+  value: number;
+};
+
+type AssetCardProps = {
+  title: string;
+  data: AssetData | null;
+  history: HistoryItem[];
+};
+
 // 🔢 Formatea números
-function formatNumber(num) {
-  return Number(num).toLocaleString('en-US', { maximumFractionDigits: 2 })
+function formatNumber(num: number) {
+  return Number(num).toLocaleString('en-US', { maximumFractionDigits: 2 });
 }
 
 // 💰 Total Net Inflow destacado
-function TotalInflow({ value }) {
-  const isPositive = value > 0
+function TotalInflow({ value }: { value: number }) {
+  const isPositive = value > 0;
   return (
     <div className={`p-4 rounded-xl text-center font-bold text-2xl shadow-inner ${
       isPositive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
     }`}>
       💰 Total Net Inflow: {formatNumber(value)}
     </div>
-  )
+  );
 }
 
 // 📈 Valor con tooltip
-function FlowValue({ label, value, tooltip }) {
-  const isPositive = value > 0
+function FlowValue({ label, value, tooltip }: { label: string; value: number; tooltip: string }) {
+  const isPositive = value > 0;
   return (
     <div className="flex justify-between text-lg text-gray-700">
       <span className="font-medium" title={tooltip}>{label}:</span>
@@ -36,16 +58,18 @@ function FlowValue({ label, value, tooltip }) {
         {formatNumber(value)}
       </span>
     </div>
-  )
+  );
 }
 
 // 🧾 Componente con gráfico y datos
-function AssetCard({ title, data, history }) {
-  if (!data) return (
-    <div className="bg-white shadow-xl rounded-2xl p-6 w-full text-center text-gray-500 text-xl">
-      Cargando {title}...
-    </div>
-  )
+function AssetCard({ title, data, history }: AssetCardProps) {
+  if (!data) {
+    return (
+      <div className="bg-white shadow-xl rounded-2xl p-6 w-full text-center text-gray-500 text-xl">
+        Cargando {title}...
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white shadow-2xl rounded-3xl p-8 w-full max-w-xl space-y-6 transition hover:scale-[1.01]">
@@ -102,15 +126,15 @@ function AssetCard({ title, data, history }) {
         Última actualización: {new Date(data.updateTimestamp).toLocaleTimeString()}
       </div>
     </div>
-  )
+  );
 }
 
 function App() {
-  const [ethData, setEthData] = useState(null)
-  const [btcData, setBtcData] = useState(null)
+  const [ethData, setEthData] = useState<AssetData | null>(null);
+  const [btcData, setBtcData] = useState<AssetData | null>(null);
 
-  const ethHistoryRef = useRef([])
-  const btcHistoryRef = useRef([])
+  const ethHistoryRef = useRef<HistoryItem[]>([]);
+  const btcHistoryRef = useRef<HistoryItem[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -118,34 +142,33 @@ function App() {
         const [ethRes, btcRes] = await Promise.all([
           fetch("https://www.binance.com/bapi/earn/v1/public/indicator/capital-flow/info?period=MINUTE_15&symbol=ETHUSDT"),
           fetch("https://www.binance.com/bapi/earn/v1/public/indicator/capital-flow/info?period=MINUTE_15&symbol=BTCUSDT")
-        ])
+        ]);
 
-        const ethJson = await ethRes.json()
-        const btcJson = await btcRes.json()
+        const ethJson = await ethRes.json();
+        const btcJson = await btcRes.json();
 
-        const now = new Date().toLocaleTimeString()
+        const now = new Date().toLocaleTimeString();
 
-        // Guardamos historial en arrays referenciados (evitamos reseteo)
         ethHistoryRef.current = [
           ...ethHistoryRef.current.slice(-19),
           { time: now, value: ethJson.data.totalNetInflow }
-        ]
+        ];
         btcHistoryRef.current = [
           ...btcHistoryRef.current.slice(-19),
           { time: now, value: btcJson.data.totalNetInflow }
-        ]
+        ];
 
-        setEthData(ethJson.data)
-        setBtcData(btcJson.data)
+        setEthData(ethJson.data);
+        setBtcData(btcJson.data);
       } catch (error) {
-        console.error("Error al cargar datos:", error)
+        console.error("Error al cargar datos:", error);
       }
-    }
+    };
 
-    fetchData()
-    const interval = setInterval(fetchData, 3000)
-    return () => clearInterval(interval)
-  }, [])
+    fetchData();
+    const interval = setInterval(fetchData, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-blue-100 p-6">
@@ -156,7 +179,7 @@ function App() {
         <AssetCard title="Bitcoin (BTCUSDT)" data={btcData} history={btcHistoryRef.current} />
       </div>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
