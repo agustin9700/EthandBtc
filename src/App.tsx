@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react';
 import {
   LineChart,
   Line,
@@ -7,9 +7,9 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
-} from 'recharts'
+} from 'recharts';
 
-// 📌 Tipos
+// Tipos
 type AssetData = {
   totalNetInflow: number;
   bigVolumeNetInflow: number;
@@ -31,12 +31,12 @@ type AssetCardProps = {
   history: HistoryItem[];
 };
 
-// 🔢 Formatea números
+// Utilidades
 function formatNumber(num: number) {
   return Number(num).toLocaleString('en-US', { maximumFractionDigits: 2 });
 }
 
-// 💰 Total Net Inflow destacado
+// Total Net Inflow
 function TotalInflow({ value }: { value: number }) {
   const isPositive = value > 0;
   return (
@@ -48,7 +48,7 @@ function TotalInflow({ value }: { value: number }) {
   );
 }
 
-// 📈 Valor con tooltip
+// Línea con etiqueta
 function FlowValue({ label, value, tooltip }: { label: string; value: number; tooltip: string }) {
   const isPositive = value > 0;
   return (
@@ -61,7 +61,7 @@ function FlowValue({ label, value, tooltip }: { label: string; value: number; to
   );
 }
 
-// 🧾 Componente con gráfico y datos
+// Componente principal de cada asset
 function AssetCard({ title, data, history }: AssetCardProps) {
   if (!data) {
     return (
@@ -74,10 +74,9 @@ function AssetCard({ title, data, history }: AssetCardProps) {
   return (
     <div className="bg-white shadow-2xl rounded-3xl p-8 w-full max-w-xl space-y-6 transition hover:scale-[1.01]">
       <h3 className="text-3xl font-bold text-gray-800 mb-2">{title}</h3>
-      
+
       <TotalInflow value={data.totalNetInflow} />
 
-      {/* 📊 Gráfico en tiempo real */}
       <div className="w-full h-64">
         <ResponsiveContainer>
           <LineChart data={history}>
@@ -96,31 +95,11 @@ function AssetCard({ title, data, history }: AssetCardProps) {
         </ResponsiveContainer>
       </div>
 
-      <FlowValue
-        label="Big Volume Net Inflow"
-        value={data.bigVolumeNetInflow}
-        tooltip="Flujo neto de grandes órdenes"
-      />
-      <FlowValue
-        label="Buy Maker Big Volume"
-        value={data.buyMakerBigVolume}
-        tooltip="Grandes órdenes de compra (limit orders)"
-      />
-      <FlowValue
-        label="Buy Taker Big Volume"
-        value={data.buyTakerBigVolume}
-        tooltip="Grandes órdenes de compra (market orders)"
-      />
-      <FlowValue
-        label="Medium Volume Net Inflow"
-        value={data.mediumVolumeNetInflow}
-        tooltip="Flujo neto de órdenes medianas"
-      />
-      <FlowValue
-        label="Small Volume Net Inflow"
-        value={data.smallVolumeNetInflow}
-        tooltip="Flujo neto de órdenes pequeñas"
-      />
+      <FlowValue label="Big Volume Net Inflow" value={data.bigVolumeNetInflow} tooltip="Flujo neto de grandes órdenes" />
+      <FlowValue label="Buy Maker Big Volume" value={data.buyMakerBigVolume} tooltip="Grandes órdenes de compra (limit orders)" />
+      <FlowValue label="Buy Taker Big Volume" value={data.buyTakerBigVolume} tooltip="Grandes órdenes de compra (market orders)" />
+      <FlowValue label="Medium Volume Net Inflow" value={data.mediumVolumeNetInflow} tooltip="Flujo neto de órdenes medianas" />
+      <FlowValue label="Small Volume Net Inflow" value={data.smallVolumeNetInflow} tooltip="Flujo neto de órdenes pequeñas" />
 
       <div className="text-sm text-gray-400 pt-2 border-t border-gray-200">
         Última actualización: {new Date(data.updateTimestamp).toLocaleTimeString()}
@@ -132,9 +111,8 @@ function AssetCard({ title, data, history }: AssetCardProps) {
 function App() {
   const [ethData, setEthData] = useState<AssetData | null>(null);
   const [btcData, setBtcData] = useState<AssetData | null>(null);
-
-  const ethHistoryRef = useRef<HistoryItem[]>([]);
-  const btcHistoryRef = useRef<HistoryItem[]>([]);
+  const [ethHistory, setEthHistory] = useState<HistoryItem[]>([]);
+  const [btcHistory, setBtcHistory] = useState<HistoryItem[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -149,17 +127,18 @@ function App() {
 
         const now = new Date().toLocaleTimeString();
 
-        ethHistoryRef.current = [
-          ...ethHistoryRef.current.slice(-19),
-          { time: now, value: ethJson.data.totalNetInflow }
-        ];
-        btcHistoryRef.current = [
-          ...btcHistoryRef.current.slice(-19),
-          { time: now, value: btcJson.data.totalNetInflow }
-        ];
-
         setEthData(ethJson.data);
         setBtcData(btcJson.data);
+
+        setEthHistory(prev => [
+          ...prev.slice(-19),
+          { time: now, value: ethJson.data.totalNetInflow }
+        ]);
+
+        setBtcHistory(prev => [
+          ...prev.slice(-19),
+          { time: now, value: btcJson.data.totalNetInflow }
+        ]);
       } catch (error) {
         console.error("Error al cargar datos:", error);
       }
@@ -175,8 +154,8 @@ function App() {
       <h1 className="text-4xl font-extrabold text-center text-gray-900 mb-12">📊 Capital Flow Dashboard</h1>
 
       <div className="flex flex-col md:flex-row justify-center items-stretch gap-8">
-        <AssetCard title="Ethereum (ETHUSDT)" data={ethData} history={ethHistoryRef.current} />
-        <AssetCard title="Bitcoin (BTCUSDT)" data={btcData} history={btcHistoryRef.current} />
+        <AssetCard title="Ethereum (ETHUSDT)" data={ethData} history={ethHistory} />
+        <AssetCard title="Bitcoin (BTCUSDT)" data={btcData} history={btcHistory} />
       </div>
     </div>
   );
